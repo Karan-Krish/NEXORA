@@ -633,6 +633,10 @@ function App() {
     setError("");
     setSuccess("");
 
+    // ========================================
+    // VALIDATION
+    // ========================================
+
     if (!profileName.trim()) {
       setError("Please enter your name.");
       return;
@@ -650,11 +654,6 @@ function App() {
 
     if (!profilePhoto) {
       setError("Please upload a profile photo.");
-      return;
-    }
-
-    if (!(profilePhoto instanceof File)) {
-      setError("Please select the profile photo again.");
       return;
     }
 
@@ -676,9 +675,19 @@ function App() {
       formData.append("bio", bio.trim());
       formData.append("partner", partner.trim());
 
-      // IMPORTANT:
-      // This must match backend upload.single("profilePhoto")
-      formData.append("profilePhoto", profilePhoto);
+      // ========================================
+      // PROFILE PHOTO
+      // ========================================
+      // Upload only when user selects a NEW photo.
+      // Existing Cloudinary photo is kept by backend.
+
+      if (profilePhoto instanceof File) {
+        formData.append("profilePhoto", profilePhoto);
+      }
+
+      // ========================================
+      // SAVE PROFILE
+      // ========================================
 
       const response = await fetch(`${API_URL}/api/profile`, {
         method: "POST",
@@ -687,15 +696,26 @@ function App() {
 
       const data = await response.json();
 
+      // ========================================
+      // HANDLE ERROR
+      // ========================================
+
       if (!response.ok) {
         setError(data.message || "Profile could not be saved.");
         return;
       }
 
-      // Save server photo path in state
+      // ========================================
+      // UPDATE PHOTO FROM SERVER
+      // ========================================
+
       if (data.profile?.profile_photo) {
         setProfilePhoto(data.profile.profile_photo);
       }
+
+      // ========================================
+      // SUCCESS
+      // ========================================
 
       setSuccess("Profile saved successfully!");
 
@@ -705,6 +725,7 @@ function App() {
       }, 800);
     } catch (error) {
       console.error("Profile save error:", error);
+
       setError("Cannot connect to NEXORA server.");
     }
   };
@@ -775,7 +796,7 @@ function App() {
           setPartner(profile.partner || "");
 
           if (profile.profile_photo) {
-            setProfilePhoto(`${API_URL}${profile.profile_photo}`);
+            setProfilePhoto(profile.profile_photo);
           }
         }
 
