@@ -2642,7 +2642,6 @@ function App() {
             <button
               className="register-button"
               onClick={() => {
-                setIsEditingProfile(true);
                 setScreen("profile");
               }}
               style={{

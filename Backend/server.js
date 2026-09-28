@@ -512,6 +512,22 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ========================================
 // FORGOT PASSWORD OTP SYSTEM
 // ========================================
@@ -835,9 +851,8 @@ app.post(
     }
   },
 );
-
 // ========================================
-// SAVE PROFILE
+// SAVE / UPDATE PROFILE
 // ========================================
 
 app.post(
@@ -853,58 +868,70 @@ app.post(
         partner,
       } = req.body;
 
-      if (
-        !userId ||
-        !name ||
-        !bestFriend ||
-        !bio
-      ) {
+      // ========================================
+      // VALIDATE REQUIRED FIELDS
+      // ========================================
+
+      if (!userId || !name || !bestFriend || !bio) {
         return res.status(400).json({
           message:
             "User ID, name, best friend and bio are required.",
         });
       }
 
-      if (!req.file) {
-        return res.status(400).json({
-          message:
-            "Profile photo is required.",
-        });
-      }
+      // ========================================
+      // CHECK USER
+      // ========================================
 
-      const userResult =
-        await pool.query(
-          "SELECT id FROM users WHERE id = $1",
-          [userId],
-        );
+      const userResult = await pool.query(
+        "SELECT id FROM users WHERE id = $1",
+        [userId],
+      );
 
-      if (
-        userResult.rows.length === 0
-      ) {
+      if (userResult.rows.length === 0) {
         return res.status(404).json({
-          message:
-            "User not found.",
+          message: "User not found.",
         });
       }
 
-      const profilePhoto =
-        `/uploads/${req.file.filename}`;
+      // ========================================
+      // CHECK EXISTING PROFILE
+      // ========================================
 
-      // Check whether profile already exists.
-      const existingProfile =
-        await pool.query(
-          `SELECT id
-           FROM profiles
-           WHERE user_id = $1
-           LIMIT 1`,
-          [userId],
-        );
+      const existingProfile = await pool.query(
+        `SELECT
+           id,
+           profile_photo
+         FROM profiles
+         WHERE user_id = $1
+         LIMIT 1`,
+        [userId],
+      );
 
       let result;
 
-      if (
-        existingProfile.rows.length > 0
-      ) {
+      // ========================================
+      // NEW PROFILE PHOTO
+      // ========================================
+
+      let newProfilePhoto = null;
+
+      if (req.file) {
+        newProfilePhoto = `/uploads/${req.file.filename}`;
+      }
+
+      // ========================================
+      // UPDATE EXISTING PROFILE
+      // ========================================
+
+      if (existingProfile.rows.length > 0) {
+        const oldProfilePhoto =
+          existingProfile.rows[0].profile_photo;
+
+        // Keep old photo if user did not select a new one
+        const finalProfilePhoto =
+          newProfilePhoto || oldProfilePhoto;
+
         result = await pool.query(
           `UPDATE profiles
            SET
@@ -920,14 +947,27 @@ app.post(
             name.trim(),
             bestFriend.trim(),
             bio.trim(),
-            partner
-              ? partner.trim()
-              : null,
-            profilePhoto,
+            partner ? partner.trim() : null,
+            finalProfilePhoto,
             userId,
           ],
         );
-      } else {
+      }
+
+      // ========================================
+      // CREATE NEW PROFILE
+      // ========================================
+
+      else {
+        // Photo is required only when creating
+        // the profile for the first time.
+
+        if (!req.file) {
+          return res.status(400).json({
+            message: "Profile photo is required.",
+          });
+        }
+
         result = await pool.query(
           `INSERT INTO profiles
            (
@@ -945,24 +985,24 @@ app.post(
             name.trim(),
             bestFriend.trim(),
             bio.trim(),
-            partner
-              ? partner.trim()
-              : null,
-            profilePhoto,
+            partner ? partner.trim() : null,
+            newProfilePhoto,
           ],
         );
       }
+
+      // ========================================
+      // SUCCESS
+      // ========================================
 
       console.log(
         "💾 Profile saved:",
         result.rows[0],
       );
 
-      res.status(200).json({
-        message:
-          "Profile saved successfully.",
-        profile:
-          result.rows[0],
+      return res.status(200).json({
+        message: "Profile saved successfully.",
+        profile: result.rows[0],
       });
     } catch (error) {
       console.error(
@@ -970,13 +1010,14 @@ app.post(
         error.message,
       );
 
-      res.status(500).json({
+      return res.status(500).json({
         message:
           "Something went wrong while saving the profile.",
       });
     }
   },
 );
+
 
 // ========================================
 // GET PROFILE
@@ -986,42 +1027,47 @@ app.get(
   "/api/profile/:userId",
   async (req, res) => {
     try {
-      const {
-        userId,
-      } = req.params;
+      const { userId } = req.params;
 
-      const result =
-        await pool.query(
-          `SELECT
-            p.id,
-            p.user_id,
-            p.name,
-            p.best_friend,
-            p.bio,
-            p.partner,
-            p.profile_photo,
-            p.created_at,
-            p.updated_at,
-            u.mobile
-           FROM profiles p
-           JOIN users u
-             ON u.id = p.user_id
-           WHERE p.user_id = $1`,
-          [userId],
-        );
+      // ========================================
+      // GET PROFILE + USER MOBILE
+      // ========================================
 
-      if (
-        result.rows.length === 0
-      ) {
+      const result = await pool.query(
+        `SELECT
+           p.id,
+           p.user_id,
+           p.name,
+           p.best_friend,
+           p.bio,
+           p.partner,
+           p.profile_photo,
+           p.created_at,
+           p.updated_at,
+           u.mobile
+         FROM profiles p
+         JOIN users u
+           ON u.id = p.user_id
+         WHERE p.user_id = $1`,
+        [userId],
+      );
+
+      // ========================================
+      // PROFILE NOT FOUND
+      // ========================================
+
+      if (result.rows.length === 0) {
         return res.status(404).json({
-          message:
-            "Profile not found.",
+          message: "Profile not found.",
         });
       }
 
-      res.status(200).json({
-        profile:
-          result.rows[0],
+      // ========================================
+      // RETURN PROFILE
+      // ========================================
+
+      return res.status(200).json({
+        profile: result.rows[0],
       });
     } catch (error) {
       console.error(
@@ -1029,7 +1075,7 @@ app.get(
         error.message,
       );
 
-      res.status(500).json({
+      return res.status(500).json({
         message:
           "Something went wrong while loading the profile.",
       });
