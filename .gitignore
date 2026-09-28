@@ -1,0 +1,7 @@
+Backend/.env
+Backend/node_modules/
+Backend/uploads/
+
+frontend/node_modules/
+frontend/dist/
+frontend/.env
