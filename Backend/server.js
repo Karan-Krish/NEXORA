@@ -1706,6 +1706,28 @@ io.on("connection", (socket) => {
   });
 });
 
+
+
+
+// ========================================
+// GLOBAL ERROR HANDLER
+// ========================================
+
+app.use((err, req, res, next) => {
+  console.error("🔥 GLOBAL ERROR:");
+  console.error(err);
+  console.error("🔥 ERROR MESSAGE:", err.message);
+  console.error("🔥 ERROR STACK:", err.stack);
+
+  return res.status(500).json({
+    message: "Internal Server Error",
+    error: err.message,
+  });
+});
+
+
+
+
 // ========================================
 // START SERVER
 // ========================================
