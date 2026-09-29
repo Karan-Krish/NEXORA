@@ -2720,56 +2720,59 @@ function App() {
                 </button>
 
                 {searchResult && (
-                  <div className="home-profile">
-                    {searchResult.profile_photo ? (
-                      <img
-                        src={`${API_URL}${searchResult.profile_photo}`}
-                        alt={searchResult.name || "Profile"}
-                        className="profile-preview"
-                      />
-                    ) : (
-                      <div className="profile-placeholder">
-                        {searchResult.name
-                          ? searchResult.name.charAt(0).toUpperCase()
-                          : "N"}
-                      </div>
-                    )}
+  <div className="home-profile">
+    {searchResult.profile_photo ? (
+      <img
+        src={searchResult.profile_photo}
+        alt={searchResult.name || "Profile"}
+        className="profile-preview"
+      />
+    ) : (
+      <div className="profile-placeholder">
+        {searchResult.name
+          ? searchResult.name.charAt(0).toUpperCase()
+          : "N"}
+      </div>
+    )}
 
-                    <h2>{searchResult.name || "NEXORA User"}</h2>
+    <h2>{searchResult.name || "NEXORA User"}</h2>
 
-                    <p>+91 {searchResult.mobile}</p>
+    <p>+91 {searchResult.mobile}</p>
 
-                    {searchResult.bio && <p>{searchResult.bio}</p>}
+    {searchResult.bio && <p>{searchResult.bio}</p>}
 
-                    <p
-                      style={{
-                        fontSize: "13px",
-                        marginTop: "8px",
-                      }}
-                    >
-                      <span
-                        style={{
-                          display: "inline-block",
-                          width: "8px",
-                          height: "8px",
-                          borderRadius: "50%",
-                          background: onlineUsers[String(searchResult.id)]
-                            ? "#2ecc71"
-                            : "#777",
-                          marginRight: "6px",
-                        }}
-                      />
+    <p
+      style={{
+        fontSize: "13px",
+        marginTop: "8px",
+      }}
+    >
+      <span
+        style={{
+          display: "inline-block",
+          width: "8px",
+          height: "8px",
+          borderRadius: "50%",
+          background: onlineUsers[String(searchResult.id)]
+            ? "#2ecc71"
+            : "#777",
+          marginRight: "6px",
+        }}
+      />
 
-                      {onlineUsers[String(searchResult.id)]
-                        ? "Online"
-                        : "Offline"}
-                    </p>
+      {onlineUsers[String(searchResult.id)]
+        ? "Online"
+        : "Offline"}
+    </p>
 
-                    <button className="register-button" onClick={startChat}>
-                      START CHAT
-                    </button>
-                  </div>
-                )}
+    <button
+      className="register-button"
+      onClick={startChat}
+    >
+      START CHAT
+    </button>
+  </div>
+)}
 
                 <button
                   className="register-button"
